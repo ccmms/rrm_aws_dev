@@ -1,0 +1,11 @@
+﻿# Editor directories and config files
+
+/.vs
+/obj
+/bin
+*/node_modules
+
+*.json
+*.user
+*.env
+
