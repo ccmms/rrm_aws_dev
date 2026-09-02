@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { clearToken, createLoginUrl, createLogoutUrl, exchangeCodeForToken, getToken, saveToken } from './auth';
+import { callAPI, clearToken, createLoginUrl, createLogoutUrl, exchangeCodeForToken, getToken, saveToken } from './auth';
 import logoImg from './assets/logo.png'
 import './App.css'
 
@@ -36,10 +36,17 @@ function App()
 
   async function logout() 
   {
+    await callAPI("logout", "POST");
     clearToken();
     setStatus("loggedOut");
 
     window.location.href = await createLogoutUrl();
+  }
+
+  async function registerClick() 
+  {
+    await callAPI("clicks", "POST");
+    clearToken();
   }
 
   if (status == "loading") { return <p>loading...</p> }
@@ -48,7 +55,7 @@ function App()
   {
     return (
       <>
-        <section id="center">
+        <section id="center" onClick={registerClick}>
           <div className="hero">
             <img src={logoImg} width="400" height="209" alt="" />
           </div>

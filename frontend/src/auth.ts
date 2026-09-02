@@ -3,7 +3,7 @@
 const CODE_VERIFIER_KEY = "cognito_pkce_code_verifier";
 const ID_TOKEN_KEY = "cognito_id_token";
 
-export const authConfig = 
+export const authConfig =
 {
   cognitoDomain: import.meta.env.VITE_COGNITO_DOMAIN as string,
   clientId: import.meta.env.VITE_COGNITO_CLIENT_ID as string,
@@ -19,7 +19,7 @@ function base64UrlEncode(bytes: Uint8Array): string
 }
 
 
-function generateCodeVerifier(): string 
+function generateCodeVerifier(): string
 {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
@@ -55,7 +55,7 @@ export async function createLoginUrl(): Promise<string>
 }
 
 
-export async function createLogoutUrl(): Promise<string> 
+export async function createLogoutUrl(): Promise<string>
 {
   const params = new URLSearchParams({
     client_id: authConfig.clientId,
@@ -79,12 +79,12 @@ export async function exchangeCodeForToken(code: string): Promise<string>
     code_verifier: verifier,
   });
 
-  const response = await fetch(`${authConfig.cognitoDomain}/oauth2/token`, 
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  });
+  const response = await fetch(`${authConfig.cognitoDomain}/oauth2/token`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    });
 
   if (!response.ok) { throw new Error(`Token exchange failed: ${await response.text()}`); }
 
@@ -102,3 +102,17 @@ export function getToken() { return sessionStorage.getItem(ID_TOKEN_KEY); }
 
 
 export function clearToken() { sessionStorage.removeItem(ID_TOKEN_KEY); }
+
+
+export async function callAPI<T>(path: string, method: "GET" | "POST"): Promise<T> 
+{
+  const token = getToken();
+  if (!token) { throw new Error("Missing token"); }
+
+  const response = await fetch(`${import.meta.env.VITE_API_BASE}/api/${path}`,
+    { method, headers: { Authorization: `Bearer ${token}` } });
+
+  if (!response.ok) { throw new Error(`Call to ${path} failed: ${response.status}`); }
+
+  return response.json() as Promise<T>;
+}
