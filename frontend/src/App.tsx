@@ -1,12 +1,44 @@
 import { useEffect, useRef, useState } from 'react'
-import { callAPI, clearToken, createLoginUrl, createLogoutUrl, exchangeCodeForToken, getToken, saveToken } from './auth';
+import { callAPI, clearToken, createLoginUrl, createLogoutUrl, decodeToken, exchangeCodeForToken, getToken, saveToken } from './auth';
 import logoImg from './assets/logo.png'
 import './App.css'
 
+type SessionState = 
+{
+  status: "loggedOut" | "loggedIn" | "loading";
+  email: string | null;
+  totalClicks: number;
+};
+
+const LOGGED_OUT: SessionState = { status: "loggedOut", email: null, totalClicks: 0 };
+
 function App() 
 {
-  const [status, setStatus] = useState<"loggedOut" | "loggedIn" | "loading">("loading");
+  const [session, setSession] = useState<SessionState>({ status: "loading", email: null, totalClicks: 0 });
   const authInitialized = useRef(false);
+
+  async function loadSession() 
+  {
+    const token = getToken();
+    if (!token) 
+    {
+      setSession(LOGGED_OUT);
+      return;
+    }
+
+    try 
+    {
+      const email = decodeToken(token).email ?? null;
+      const result = await callAPI<{ totalClicks: number }>("me", "GET");
+      setSession({ status: "loggedIn", email, totalClicks: result.totalClicks });
+    }
+    catch (err) 
+    {
+      console.error("Failed to load session:", err);
+      clearToken();
+      setSession(LOGGED_OUT);
+    }
+  }
 
   useEffect(() => 
   {
@@ -20,12 +52,19 @@ function App()
 
       if (code) 
       {
-        const token = await exchangeCodeForToken(code);
-        saveToken(token);
-        window.history.replaceState({}, document.title, window.location.pathname);
+        try 
+        {
+          const token = await exchangeCodeForToken(code);
+          saveToken(token);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        catch (err)
+        {
+          console.error("Token exchange failed: ", err);
+        }
       }
 
-      setStatus(getToken() ? "loggedIn" : "loggedOut");
+      await loadSession();
     }
 
     initialize();
@@ -36,22 +75,43 @@ function App()
 
   async function logout() 
   {
-    await callAPI("logout", "POST");
+    let totalClicks = session.totalClicks;
+
+    try 
+    {
+      const result = await callAPI<{ totalClicks: number }>("logout", "POST");
+      totalClicks = result.totalClicks;
+    }
+    catch(err)
+    {
+      console.error("An error happenned when trying to close the session:", err);
+    }
+
     clearToken();
-    setStatus("loggedOut");
+    setSession(LOGGED_OUT);
+    alert(`You clicked ${totalClicks} times during your session!`);
 
     window.location.href = await createLogoutUrl();
   }
 
   async function registerClick() 
   {
-    await callAPI("clicks", "POST");
-    clearToken();
+    try 
+    {
+      const result = await callAPI<{ totalClicks: number }>("clicks", "POST");
+      setSession((s) => ({ ...s, totalClicks: result.totalClicks }));
+    }
+    catch (err) 
+    {
+      console.error("Failed to register click:", err);
+      clearToken();
+      setSession(LOGGED_OUT);
+    }
   }
 
-  if (status == "loading") { return <p>loading...</p> }
+  if (session.status == "loading") { return <p>loading...</p> }
 
-  if (status == "loggedIn") 
+  if (session.status == "loggedIn") 
   {
     return (
       <>
@@ -61,7 +121,7 @@ function App()
           </div>
           <div>
             <h1>Welcome back.</h1>
-            <p>So far you clicked X times in this session.</p>
+            <p>So far you clicked {session.totalClicks} times in this session.</p>
           </div>
 
           <button type="submit" className="btn btn-primary" onClick={logout}>Logout</button>

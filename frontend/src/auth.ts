@@ -35,6 +35,15 @@ async function generateCodeChallenge(verifier: string): Promise<string>
 }
 
 
+export function decodeToken(token: string): { email?: string; sub?: string } 
+{
+  const payload = token.split(".")[1];
+  const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, "=");
+  return JSON.parse(atob(padded));
+}
+
+
 export async function createLoginUrl(): Promise<string> 
 {
   const verifier = generateCodeVerifier();
