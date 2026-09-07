@@ -7,7 +7,7 @@ using System.Security.Claims;
 JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddOpenApi();
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 builder.Services.AddSingleton<IClickTracker, ClickTracker>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:FrontendOrigins").Get<string[]>()
@@ -48,14 +48,9 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 app.UseHttpsRedirection();
-app.UseCors("AllowFrontendOrigin");             
+app.UseCors("AllowFrontendOrigin");
 app.UseAuthentication();
 app.UseAuthorization();
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
 app.MapGet("/api/me", (ClaimsPrincipal user, IClickTracker tracker) =>
 {
