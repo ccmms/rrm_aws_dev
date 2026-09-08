@@ -4,8 +4,7 @@
 /obj
 /bin
 */node_modules
-
-*.json
+/appsettings.Development.json
 *.user
 *.env
 
