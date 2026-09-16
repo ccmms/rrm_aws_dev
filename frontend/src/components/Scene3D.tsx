@@ -1,67 +1,100 @@
-﻿import { useEffect, useRef } from "react";
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+﻿import * as THREE from "three";
+import { CameraController } from "../core/renderer/camera_controller";
+import type { BoundingBox } from "../core/geometry/geometry_types";
 
-function Scene3D()
+
+export class Scene3DClass
 {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const sceneRef = useRef<THREE.Scene | null>(null);
+    private scene?: THREE.Scene;
+    private camera?: THREE.PerspectiveCamera;
+    private renderer?: THREE.WebGLRenderer;
+    private cameraController?: CameraController;
+    private boundingBox?: BoundingBox;
+    private frameId?: number;
 
-    useEffect(() =>
+    initialize(container: HTMLElement): void
     {
-        const container = containerRef.current;
-        if (!container) { return; }
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color("#020617");
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a211c);
+        this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 1000);
 
-        sceneRef.current = scene;
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
 
-        const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(3, 3, 3);
-        camera.lookAt(0, 0, 0);
+        container.appendChild(this.renderer.domElement);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
+        this.boundingBox = { min: { x: -10, y: -20, z: -30 }, max: { x: 10, y: 20, z: 30 }};
+        this.cameraController = new CameraController(this.camera, this.renderer);
+        this.cameraController.fitToBoundingBox(this.boundingBox);
 
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
+        this.addLights();
+        this.addAxis();
 
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
-        const material = new THREE.MeshBasicMaterial({ color: 0x4fae8f, wireframe: true });
-        const cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
+        this.startRenderLoop();
+    }
 
-        let frameId: number;
 
-        function animate()
+    setBackgroundColor(color: THREE.Color): void
+    {
+        if (!this.scene) { return; }
+        this.scene.background = color;
+    }
+
+
+    dispose(): void
+    {
+        if (this.frameId !== undefined)
         {
-            frameId = requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
+            cancelAnimationFrame(this.frameId);
+            this.frameId = undefined;
         }
 
-        animate();
+        this.cameraController?.dispose();
+        this.renderer?.dispose();
+        const canvas = this.renderer?.domElement;
+        canvas?.parentElement?.removeChild(canvas);
 
-        return () => {
-            cancelAnimationFrame(frameId);
-            geometry.dispose();
-            material.dispose();
-            controls.dispose();
-            renderer.dispose();
-            container.removeChild(renderer.domElement);
+        this.scene = undefined;
+        this.camera = undefined;
+        this.renderer = undefined;
+    }
+
+
+    private startRenderLoop(): void
+    {
+        const render = () =>
+        {
+            this.frameId = requestAnimationFrame(render);
+            if (!this.scene || !this.camera || !this.renderer) { return; }
+
+            this.cameraController?.update();
+            this.renderer.render(this.scene, this.camera);
         };
-    }, []);
 
-    return (
-        <div ref={containerRef} style={{ width: '100%', height: '100vh', position: 'relative' }} >
-            <input
-                type="color" defaultValue="#1a211c" style={{ position: 'absolute', top: 12, left: 12 }}
-                onChange={(e) => {
-                    if (sceneRef.current) { sceneRef.current.background = new THREE.Color(e.target.value); }
-                }} />
-        </div>);
+        render();
+    }
+
+
+    private addAxis(): void
+    {
+        if (!this.scene) { return; }
+
+        const axes = new THREE.AxesHelper(1.25);
+        this.scene.add(axes);
+    }
+
+
+    private addLights(): void
+    {
+        if (!this.scene) { return; }
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        directionalLight.position.set(5, 5, 5);
+        this.scene.add(directionalLight);
+    }
 }
-
-export default Scene3D;

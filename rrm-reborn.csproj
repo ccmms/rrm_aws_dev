@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <TypeScriptCompile Include="frontend\src\components\scene3d.tsx" />
+    <TypeScriptCompile Include="frontend\src\components\viewer3d.tsx" />
     <TypeScriptCompile Include="frontend\src\core\geometry\geometry_types.ts" />
     <TypeScriptCompile Include="frontend\src\core\renderer\camera_controller.ts" />
   </ItemGroup>
