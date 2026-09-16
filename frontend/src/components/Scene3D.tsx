@@ -1,6 +1,7 @@
 ﻿import * as THREE from "three";
 import { CameraController } from "../core/renderer/camera_controller";
 import type { BoundingBox } from "../core/geometry/geometry_types";
+import { BoundingBoxRenderer } from "../core/renderer/boundingbox_renderer";
 
 
 export class Scene3DClass
@@ -9,7 +10,8 @@ export class Scene3DClass
     private camera?: THREE.PerspectiveCamera;
     private renderer?: THREE.WebGLRenderer;
     private cameraController?: CameraController;
-    private boundingBox?: BoundingBox;
+    private boundingBoxRenderer?: BoundingBoxRenderer;
+    private resizeObserver?: ResizeObserver;
     private frameId?: number;
 
     initialize(container: HTMLElement): void
@@ -25,12 +27,15 @@ export class Scene3DClass
 
         container.appendChild(this.renderer.domElement);
 
-        this.boundingBox = { min: { x: -10, y: -20, z: -30 }, max: { x: 10, y: 20, z: 30 }};
         this.cameraController = new CameraController(this.camera, this.renderer);
-        this.cameraController.fitToBoundingBox(this.boundingBox);
+        this.boundingBoxRenderer = new BoundingBoxRenderer(this.scene);
 
+        this.setBoundingBox({ min: { x: -1, y: -1, z: -1 }, max: { x: 1, y: 1, z: 1 } });
         this.addLights();
         this.addAxis();
+
+        this.resizeObserver = new ResizeObserver(() => { this.resize(container); });
+        this.resizeObserver.observe(container);
 
         this.startRenderLoop();
     }
@@ -43,6 +48,19 @@ export class Scene3DClass
     }
 
 
+    setBoundingBox(bBox: BoundingBox): void
+    {
+        this.boundingBoxRenderer?.setBoundingBox(bBox);
+        this.cameraController?.fitToBoundingBox(bBox);
+    }
+
+
+    setBoundingBoxVisisble(visible: boolean): void
+    {
+        this.boundingBoxRenderer?.setVisible(visible);
+    }
+
+
     dispose(): void
     {
         if (this.frameId !== undefined)
@@ -51,8 +69,11 @@ export class Scene3DClass
             this.frameId = undefined;
         }
 
-        this.cameraController?.dispose();
+        this.resizeObserver?.disconnect();
+        this.boundingBoxRenderer?.dispose();
+        this.cameraController?.dispose(); 
         this.renderer?.dispose();
+
         const canvas = this.renderer?.domElement;
         canvas?.parentElement?.removeChild(canvas);
 
@@ -96,5 +117,22 @@ export class Scene3DClass
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
         directionalLight.position.set(5, 5, 5);
         this.scene.add(directionalLight);
+    }
+
+
+    private resize(container: HTMLElement): void
+    {
+        if (!this.camera || !this.renderer) { return; }
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        if (width === 0 || height === 0) { return; }
+
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.setSize(width, height);
+
     }
 }
