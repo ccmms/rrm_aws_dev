@@ -1,5 +1,5 @@
 ﻿import * as THREE from "three";
-import type { BoundingBox } from "../geometry/geometry_types";
+import type { BoundingBox } from "../../../core/geometry/geometry_types";
 
 export class BoundingBoxRenderer
 {
@@ -7,7 +7,6 @@ export class BoundingBoxRenderer
     private readonly scene: THREE.Scene;
 
     constructor(scene: THREE.Scene) { this.scene = scene; }
-
 
     setBoundingBox(bBox: BoundingBox): void
     {

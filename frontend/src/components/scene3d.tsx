@@ -1,7 +1,7 @@
 ﻿import * as THREE from "three";
 import type { BoundingBox } from "../core/geometry/geometry_types";
-import { BoundingBoxRenderer } from "../core/renderer/boundingbox_renderer";
-import { CameraController } from "../core/renderer/camera_controller";
+import { BoundingBoxRenderer } from "../rendering/three/overlays/boundingbox_renderer";
+import { CameraController } from "../rendering/three/camera/camera_controller";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 

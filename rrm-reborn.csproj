@@ -14,6 +14,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>rrm_reborn</RootNamespace>
+    <TypeScriptJSXEmit>preserve</TypeScriptJSXEmit>
   </PropertyGroup>
 	
   <ItemGroup>
@@ -30,8 +31,8 @@
     <TypeScriptCompile Include="frontend\src\components\scene3d.tsx" />
     <TypeScriptCompile Include="frontend\src\components\viewer3d.tsx" />
     <TypeScriptCompile Include="frontend\src\core\geometry\geometry_types.ts" />
-    <TypeScriptCompile Include="frontend\src\core\renderer\boundingbox_renderer.ts" />
-    <TypeScriptCompile Include="frontend\src\core\renderer\camera_controller.ts" />
+    <TypeScriptCompile Include="frontend\src\rendering\three\overlays\boundingbox_renderer.ts" />
+    <TypeScriptCompile Include="frontend\src\rendering\three\camera\camera_controller.ts" />
   </ItemGroup>
 
 </Project>
