@@ -1,7 +1,8 @@
 ﻿import * as THREE from "three";
-import { CameraController } from "../core/renderer/camera_controller";
 import type { BoundingBox } from "../core/geometry/geometry_types";
 import { BoundingBoxRenderer } from "../core/renderer/boundingbox_renderer";
+import { CameraController } from "../core/renderer/camera_controller";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 
 export class Scene3DClass
@@ -13,6 +14,7 @@ export class Scene3DClass
     private boundingBoxRenderer?: BoundingBoxRenderer;
     private resizeObserver?: ResizeObserver;
     private frameId?: number;
+    private environmentTexture?: THREE.Texture;
 
     initialize(container: HTMLElement): void
     {
@@ -21,11 +23,17 @@ export class Scene3DClass
 
         this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 1000);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(container.clientWidth, container.clientHeight);
 
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
+
         container.appendChild(this.renderer.domElement);
+
+        this.createEnvironment();
 
         this.cameraController = new CameraController(this.camera, this.renderer);
         this.boundingBoxRenderer = new BoundingBoxRenderer(this.scene);
@@ -111,12 +119,42 @@ export class Scene3DClass
     {
         if (!this.scene) { return; }
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        this.scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        directionalLight.position.set(5, 5, 5);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.4);
+        directionalLight.position.set(3.5, 5.0, 2.5);
+        directionalLight.target.position.set(0.0, 0.0, 0.0);
+        directionalLight.castShadow = true;
         this.scene.add(directionalLight);
+        this.scene.add(directionalLight.target);
+
+        directionalLight.shadow.mapSize.set(2048, 2048);
+
+        const shadowCamera = directionalLight.shadow.camera;
+        shadowCamera.left = -2.5;
+        shadowCamera.right = 2.5;
+        shadowCamera.top = 2.5;
+        shadowCamera.bottom = -2.5;
+
+        shadowCamera.near = 0.1;
+        shadowCamera.far = 15;
+
+        directionalLight.shadow.bias = -0.0002;
+        directionalLight.shadow.normalBias = 0.015;
+
+        directionalLight.shadow.radius = 2;
+
+        const fillLight = new THREE.DirectionalLight(0xdce8ff, 0.55);
+        fillLight.position.set(-4.0, 2.5, -3.0);
+        fillLight.target.position.set(0.0, 0.0, 0.0);
+
+        this.scene.add(fillLight);
+        this.scene.add(fillLight.target);
+
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.75);
+        fillLight.position.set(-2.5, 3.5, 4.5);
+        fillLight.target.position.set(0.0, 0.0, 0.0);
+
+        this.scene.add(rimLight);
+        this.scene.add(rimLight.target);
     }
 
 
@@ -133,6 +171,30 @@ export class Scene3DClass
         this.camera.updateProjectionMatrix();
 
         this.renderer.setSize(width, height);
+    }
 
+
+    private createEnvironment(): void
+    {
+        if (!this.renderer || !this.scene)
+        {
+            return;
+        }
+
+        const environment = new RoomEnvironment();
+
+        const pmremGenerator =
+            new THREE.PMREMGenerator(this.renderer);
+
+        this.environmentTexture =
+            pmremGenerator.fromScene(environment).texture;
+
+        this.scene.environment =
+            this.environmentTexture;
+
+        this.scene.environmentIntensity = 0.8;
+
+        environment.dispose();
+        pmremGenerator.dispose();
     }
 }
