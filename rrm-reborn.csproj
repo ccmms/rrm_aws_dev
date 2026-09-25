@@ -34,7 +34,9 @@
     <TypeScriptCompile Include="frontend\src\core\geometry\rendering_types.ts" />
     <TypeScriptCompile Include="frontend\src\rendering\three\overlays\boundingbox_renderer.ts" />
     <TypeScriptCompile Include="frontend\src\rendering\three\camera\camera_controller.ts" />
-    <TypeScriptCompile Include="frontend\src\core\three\layers\surface_renderer.ts" />
+    <TypeScriptCompile Include="frontend\src\rendering\three\layers\surface_renderer.ts" />
+    <TypeScriptCompile Include="frontend\src\api\surface\surface_api_types.ts" />
+    <TypeScriptCompile Include="frontend\src\api\surface\surface_api.ts" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 ﻿import * as THREE from "three";
 import { useEffect, useRef, useState } from "react";
 import { Scene3DClass } from "./scene3d";
+import { generateSurface } from "../api/surface/surface_api";
 
 
 export function Viewer3D()
@@ -27,6 +28,8 @@ export function Viewer3D()
 
     async function handleGenerateSurface()
     {
+        const mesh = await generateSurface();
+        sceneRef.current?.addSurface(mesh);
     }
 
     useEffect(() => { sceneRef.current?.setBoundingBoxVisisble(showBoundingBox); }, [showBoundingBox]);
