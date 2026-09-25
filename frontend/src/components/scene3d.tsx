@@ -2,7 +2,9 @@
 import type { BoundingBox } from "../core/geometry/geometry_types";
 import { BoundingBoxRenderer } from "../rendering/three/overlays/boundingbox_renderer";
 import { CameraController } from "../rendering/three/camera/camera_controller";
+import type { MeshData } from "../core/geometry/rendering_types";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { SurfaceLayer } from "../rendering/three/layers/surface_renderer";
 
 
 export class Scene3DClass
@@ -12,6 +14,7 @@ export class Scene3DClass
     private renderer?: THREE.WebGLRenderer;
     private cameraController?: CameraController;
     private boundingBoxRenderer?: BoundingBoxRenderer;
+    private surfaceLayer?: SurfaceLayer;
     private resizeObserver?: ResizeObserver;
     private frameId?: number;
     private environmentTexture?: THREE.Texture;
@@ -42,6 +45,8 @@ export class Scene3DClass
         this.addLights();
         this.addAxis();
 
+        this.surfaceLayer = new SurfaceLayer(this.scene);
+
         this.resizeObserver = new ResizeObserver(() => { this.resize(container); });
         this.resizeObserver.observe(container);
 
@@ -69,6 +74,26 @@ export class Scene3DClass
     }
 
 
+    addSurface(mesh: MeshData): void
+    {
+        this.surfaceLayer?.add(mesh);
+
+    }
+
+
+    removeSurface(id: string): void
+    {
+        this.surfaceLayer?.remove(id);
+
+    }
+
+
+    updateSurfaceRenderer(): SurfaceLayer | undefined
+    {
+        return this.surfaceLayer?? undefined;
+    }
+
+
     dispose(): void
     {
         if (this.frameId !== undefined)
@@ -78,6 +103,7 @@ export class Scene3DClass
         }
 
         this.resizeObserver?.disconnect();
+        this.surfaceLayer?.dispose();
         this.boundingBoxRenderer?.dispose();
         this.cameraController?.dispose(); 
         this.renderer?.dispose();
