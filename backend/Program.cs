@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using rrm_reborn.backend;
+using rrm_reborn.contracts;
+using rrm_reborn.services;
 using System.Security.Claims;
 
 JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -61,7 +63,7 @@ app.MapGet("/api/me", (ClaimsPrincipal user, IClickTracker tracker) =>
     }
     return Results.Ok(new { totalClicks = tracker.GetTotal(sub) });
 
-}).RequireAuthorization(); ;
+}).RequireAuthorization();
 
 
 app.MapPost("/api/clicks", (ClaimsPrincipal user, IClickTracker tracker) =>
@@ -84,6 +86,27 @@ app.MapPost("/api/logout", (ClaimsPrincipal user, IClickTracker tracker) =>
         return Results.Unauthorized();
     }
     return Results.Ok(new { totalClicks = tracker.EndSession(sub) });
+
+}).RequireAuthorization();
+
+
+app.MapPost("/api/generate", async (ClaimsPrincipal user) =>
+{
+    var sub = user.FindFirst("sub")?.Value;
+    if (sub is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    await Task.Delay(700);
+
+    var mesh = SurfaceGenerationService.GenerateTerrainMesh();
+
+    var response = new SurfaceGenerationResponse(Mesh: mesh, Warnings: ["This surface was successfully generated."],
+        Stats: new SurfaceGenerationStats(VertexCount: mesh.Vertices.Count() / 3, TriangleCount: mesh.Indices.Count() / 3,
+        GenerationTimeMs: 700, Source: "fake-surfaces-backend"));
+
+    return Results.Ok(response);
 
 }).RequireAuthorization();
 
